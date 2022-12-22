@@ -1,0 +1,739 @@
+Chapter 17: Router Hooks And Links 
+
+  // useEffect() is an anonymous function / arrow function
+  useEffect(() => {
+    // To filter / provide new data for useEffect()
+    const filteredResults = posts.filter(
+      (post) =>
+        post.body.toLowerCase().includes(search.toLowerCase()) ||
+        post.title.toLowerCase().includes(search.toLowerCase())
+    );
+    setSearchResults(filteredResults.reverse());
+    // Dependencies for useEffect() so that when any of the dependencies change
+    // useEffect() will run again and load / reload
+  }, [posts, search]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // To set an id for a / the new post
+    // First, check if an id, if the id(s) length, is not empty and
+    // get the id of last post to set the id of the preceding post
+    // equal to the id of the last post, posted, plus one,
+    // posts[posts.length - 1].id + 1
+    const id = posts.length ? posts[posts.length - 1].id + 1 : 1;
+    // To create a date / time, datetime, and format the date / time
+    // for our posts
+    const datetime = format(new Date(), "MMMM dd, yyyy pp");
+    // To Create a / the new post
+    const newPost = { id, title: postTitle, datetime, body: postBody };
+    const allPosts = [...posts, newPost];
+    setPosts(allPosts);
+    // Resets the posts title to an empty post title instead of having to create
+    // a new post
+    setPostTitle("");
+    // Resets the posts body to an empty post body instead of having to create
+    // a new post
+    setPostBody("");
+    // And after we have created a new post, navigate back to the home page
+    navigate("/");
+  };
+
+    const handleDelete = (id) => {
+    // To find, filter out, the post with the id that we have passed in
+    const postList = posts.filter((post) => post.id !== id);
+    // To set posts back to the post list without that id
+    setPosts(postList);
+    // To call on, implement, use our browser(s) history
+    // Serves that component to our Home directory
+    navigate("/");
+  };
+
+  -----------------------------------------------------------------------------
+
+  Chapter 18: Flexbox Components 
+
+  -----------------------------------------------------------------------------
+
+  Chapter 19: Axios API Requests 
+
+  To launch json 
+
+  npx json-server -p 3500 -w data/db.json 
+
+          <Route path="/edit/:id">
+          <Route
+            index
+            element={
+              <EditPost
+                posts={posts}
+                handleEdit={handleEdit}
+                editTitle={editTitle}
+                setEditTitle={setEditTitle}
+                editBody={editBody}
+                setEditBody={setEditBody}
+              />
+            }
+          />
+
+-------------------------------------------------------------------------------
+
+Chapter 20: Custom Hooks
+
+Only Call Hooks At The Top Level 
+
+Only Call Hooks From React Functions 
+
+- Call Hooks from React function components 
+- Call Hooks from custom Hooks 
+
+-------------------------------------------------------------------------------
+
+Chapter 21: Context API & useContext Hook
+
+App.js
+
+import React from "react";
+import Layout from "./Layout";
+import Home from "./Home";
+import NewPost from "./NewPost";
+import PostPage from "./PostPage";
+import EditPost from "./EditPost";
+import About from "./About";
+import Missing from "./Missing";
+import { Route, Routes, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import api from "../api/posts";
+import useWindowSize from "../hooks/useWindowSize";
+import useAxiosFetch from "../hooks/useAxiosFetch";
+
+function App() {
+  const [posts, setPosts] = useState([]);
+  const [search, setSearch] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [postTitle, setPostTitle] = useState("");
+  const [postBody, setPostBody] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const navigate = useNavigate();
+  const { width } = useWindowSize();
+  const { data, fetchError, isLoading } = useAxiosFetch(
+    "http://localhost:3500/posts"
+  );
+
+  useEffect(() => {
+    setPosts(data);
+  }, [data]);
+
+  // CRUD / The Get Portion of CRUD
+  // useEffect(() => {
+  //   const fetchPosts = async () => {
+  //     try {
+  //       const response = await api.get("/posts");
+  //       setPosts(response.data);
+  //     } catch (err) {
+  //       if (err.response) {
+  //         // When not in the 200 response range
+  //         console.log(err.response.data);
+  //         console.log(err.response.status);
+  //         console.log(err.response.headers);
+  //       } else {
+  //         // If err.response is undefined
+  //         console.log(`Error: ${err.message}`);
+  //       }
+  //     }
+  //   };
+  //   fetchPosts();
+  // }, []);
+
+  useEffect(() => {
+    const filteredResults = posts.filter(
+      (post) =>
+        post.body.toLowerCase().includes(search.toLowerCase()) ||
+        post.title.toLowerCase().includes(search.toLowerCase())
+    );
+
+    setSearchResults(filteredResults.reverse());
+  }, [posts, search]);
+
+  // CRUD / The Post Portion of CRUD
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const id = posts.length ? posts[posts.length - 1].id + 1 : 1;
+    const datetime = format(new Date(), "MMMM dd, yyyy pp");
+    const newPost = { id, title: postTitle, datetime, body: postBody };
+    try {
+      const response = await api.post("/posts", newPost);
+      const allPosts = [...posts, response.data];
+      setPosts(allPosts);
+      setPostTitle("");
+      setPostBody("");
+      navigate("/");
+    } catch (err) {
+      console.log(`Error: ${err.message}`);
+    }
+  };
+
+  const handleEdit = async (id) => {
+    const datetime = format(new Date(), "MMMM dd, yyyy pp");
+    const updatedPost = { id, title: editTitle, datetime, body: editBody };
+    try {
+      const response = await api.put(`/posts/${id}`, updatedPost);
+      setPosts(
+        posts.map((post) => (post.id === id ? { ...response.data } : post))
+      );
+      setEditTitle("");
+      setEditBody("");
+      navigate("/");
+    } catch (err) {
+      console.log(`Error: ${err.message}`);
+    }
+  };
+
+  // CRUD / The Delete Portion of CRUD
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/posts/${id}`);
+      const postsList = posts.filter((post) => post.id !== id);
+      setPosts(postsList);
+      navigate("/");
+    } catch (err) {
+      console.log(`Error: ${err.message}`);
+    }
+  };
+
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={<Layout search={search} setSearch={setSearch} width={width} />}
+      >
+        <Route
+          index
+          element={
+            <Home
+              posts={searchResults}
+              fetchError={fetchError}
+              isLoading={isLoading}
+            />
+          }
+        />
+        <Route path="post">
+          <Route
+            index
+            element={
+              <NewPost
+                handleSubmit={handleSubmit}
+                postTitle={postTitle}
+                setPostTitle={setPostTitle}
+                postBody={postBody}
+                setPostBody={setPostBody}
+              />
+            }
+          />
+          <Route
+            path="edit/:id"
+            index
+            element={
+              <EditPost
+                posts={posts}
+                handleEdit={handleEdit}
+                editTitle={editTitle}
+                setEditTitle={setEditTitle}
+                editBody={editBody}
+                setEditBody={setEditBody}
+              />
+            }
+          />
+          <Route
+            path=":id"
+            element={<PostPage posts={posts} handleDelete={handleDelete} />}
+          />
+        </Route>
+        <Route path="about" element={<About />} />
+        <Route path="*" element={<Missing />} />
+      </Route>
+    </Routes>
+  );
+}
+
+export default App;
+
+Header.js
+
+import React from "react";
+import { FaLaptop, FaTabletAlt, FaMobileAlt } from "react-icons/fa";
+import { useContext } from "react";
+import DataContext from "../context/DataContext";
+
+const Header = ({ title, width }) => {
+  const { width } = useContext(DataContext);
+
+  return (
+    <header className="Header">
+      <h1>{title}</h1>
+      {width < 768 ? (
+        <FaMobileAlt />
+      ) : width < 992 ? (
+        <FaTabletAlt />
+      ) : (
+        <FaLaptop />
+      )}
+    </header>
+  );
+};
+
+Header.defaultProps = {
+  title: "Default Header Here",
+};
+
+export default Header;
+
+Nav.js
+
+import React from "react";
+import { Link } from "react-router-dom";
+import { useContext } from "react";
+import DataContext from "../context/DataContext";
+
+const Nav = ({ search, setSearch }) => {
+  const { search, setSearch } = useContext(DataContext);
+
+  return (
+    <nav className="Nav">
+      <form
+        action=""
+        className="searchForm"
+        onSubmit={(e) => e.preventDefault()}
+      >
+        <label htmlFor="search">Search Posts</label>
+        <input
+          type="text"
+          id="search"
+          placeholder="Search Posts"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </form>
+      <ul>
+        <li>
+          <Link to="/">Home</Link>
+        </li>
+        <li>
+          <Link to="post">Post</Link>
+        </li>
+        <li>
+          <Link to="about">About</Link>
+        </li>
+      </ul>
+    </nav>
+  );
+};
+
+export default Nav;
+
+Home.js
+
+import React from "react";
+import Feed from "./Feed";
+import { useContext } from "react";
+import DataContext from "../context/DataContext";
+
+const Home = ({ posts, fetchError, isLoading }) => {
+  const { posts, fetchError, isLoading } = useContext(DataContext);
+
+  return (
+    <main className="Home">
+      {isLoading && <p className="statusMsg">Loading Posts...</p>}
+      {!isLoading && fetchError && <p className="statusMsg">{{ color: "red" }}</p>}
+      {!isLoading &&
+        !fetchError &&
+        (posts.length ? (
+          <Feed posts={posts} />
+        ) : (
+          <p className="statusMsg">No Posts To Display</p>
+        ))}
+    </main>
+  );
+};
+
+export default Home;
+
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={<Layout search={search} setSearch={setSearch} />}
+      >
+        <Route index element={<Home />} />
+        <Route path="post">
+          <Route index element={<NewPost />} />
+          <Route path="edit/:id" index element={<EditPost />} />
+          <Route path=":id" element={<PostPage />} />
+        </Route>
+        <Route path="about" element={<About />} />
+        <Route path="*" element={<Missing />} />
+      </Route>
+    </Routes>
+  );
+}
+
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={<Layout search={search} setSearch={setSearch} />}
+      >
+        <Route index element={<Home />} />
+        <Route path="post" index element={<NewPost />} />
+        <Route path="edit/:id" index element={<EditPost />} />
+        <Route path="post/:id" element={<PostPage />} />
+        <Route path="about" element={<About />} />
+        <Route path="*" element={<Missing />} />
+      </Route>
+    </Routes>
+  );
+}
+
+import React from "react";
+import Layout from "./Layout";
+import Home from "./Home";
+import NewPost from "./NewPost";
+import PostPage from "./PostPage";
+import EditPost from "./EditPost";
+import About from "./About";
+import Missing from "./Missing";
+import { Route, Routes, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import api from "../api/posts";
+import useWindowSize from "../hooks/useWindowSize";
+import useAxiosFetch from "../hooks/useAxiosFetch";
+
+function App() {
+  const [posts, setPosts] = useState([]);
+  const [search, setSearch] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [postTitle, setPostTitle] = useState("");
+  const [postBody, setPostBody] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const navigate = useNavigate();
+  const { width } = useWindowSize();
+  const { data, fetchError, isLoading } = useAxiosFetch(
+    "http://localhost:3500/posts"
+  );
+
+  useEffect(() => {
+    setPosts(data);
+  }, [data]);
+
+  useEffect(() => {
+    const filteredResults = posts.filter(
+      (post) =>
+        post.body.toLowerCase().includes(search.toLowerCase()) ||
+        post.title.toLowerCase().includes(search.toLowerCase())
+    );
+
+    setSearchResults(filteredResults.reverse());
+  }, [posts, search]);
+
+  // CRUD / The Post Portion of CRUD
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const id = posts.length ? posts[posts.length - 1].id + 1 : 1;
+    const datetime = format(new Date(), "MMMM dd, yyyy pp");
+    const newPost = { id, title: postTitle, datetime, body: postBody };
+    try {
+      const response = await api.post("/posts", newPost);
+      const allPosts = [...posts, response.data];
+      setPosts(allPosts);
+      setPostTitle("");
+      setPostBody("");
+      navigate("/");
+    } catch (err) {
+      console.log(`Error: ${err.message}`);
+    }
+  };
+
+  const handleEdit = async (id) => {
+    const datetime = format(new Date(), "MMMM dd, yyyy pp");
+    const updatedPost = { id, title: editTitle, datetime, body: editBody };
+    try {
+      const response = await api.put(`/posts/${id}`, updatedPost);
+      setPosts(
+        posts.map((post) => (post.id === id ? { ...response.data } : post))
+      );
+      setEditTitle("");
+      setEditBody("");
+      navigate("/");
+    } catch (err) {
+      console.log(`Error: ${err.message}`);
+    }
+  };
+
+  // CRUD / The Delete Portion of CRUD
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/posts/${id}`);
+      const postsList = posts.filter((post) => post.id !== id);
+      setPosts(postsList);
+      navigate("/");
+    } catch (err) {
+      console.log(`Error: ${err.message}`);
+    }
+  };
+
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={<Layout search={search} setSearch={setSearch} />}
+      >
+        <Route index element={<Home />} />
+        <Route path="post" index element={<NewPost />} />
+        <Route path="edit/:id" index element={<EditPost />} />
+        <Route path="post/:id" element={<PostPage />} />
+        <Route path="about" element={<About />} />
+        <Route path="*" element={<Missing />} />
+      </Route>
+    </Routes>
+  );
+}
+
+export default App;
+
+-------------------------------------------------------------------------------
+
+Chapter 22: Easy Peasy Redux
+
+index.js
+
+import React from "react";
+import ReactDOM from "react-dom";
+import "./index.css";
+import App from "./Components/App";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+ReactDOM.render(
+  <React.StrictMode>
+    <Router>
+      <Routes>
+        <Route path="/*" element={<App />} />
+      </Routes>
+    </Router>
+  </React.StrictMode>,
+  document.getElementById("root")
+);
+
+Layout.js
+
+import React from "react";
+import Header from "./Header";
+import Nav from "./Nav";
+import Footer from "./Footer";
+import { Outlet } from "react-router-dom";
+import { DataProvider } from "../context/DataContext";
+
+const Layout = () => {
+  return (
+    <div className="App">
+      <Header title="React JS Blog" />
+      <DataProvider>
+        <Nav />
+        <Outlet />
+        <Footer />
+      </DataProvider>
+    </div>
+  );
+};
+
+export default Layout;
+
+App,js
+
+import React from "react";
+import Header from "./Header";
+import Nav from "./Nav";
+import Footer from "./Footer";
+import { Outlet } from "react-router-dom";
+import { DataProvider } from "../context/DataContext";
+
+const Layout = () => {
+  return (
+    <div className="App">
+      <Header title="React JS Blog" />
+      <DataProvider>
+        <Nav />
+        <Outlet />
+        <Footer />
+      </DataProvider>
+    </div>
+  );
+};
+
+export default Layout;
+
+Nav.js 
+
+import React from "react";
+import { Link } from "react-router-dom";
+import { useContext } from "react";
+import DataContext from "../context/DataContext";
+
+const Nav = () => {
+  const { search, setSearch } = useContext(DataContext);
+
+  return (
+    <nav className="Nav">
+      <form
+        action=""
+        className="searchForm"
+        onSubmit={(e) => e.preventDefault()}
+      >
+        <label htmlFor="search">Search Posts</label>
+        <input
+          type="text"
+          id="search"
+          placeholder="Search Posts"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </form>
+      <ul>
+        <li>
+          <Link to="/">Home</Link>
+        </li>
+        <li>
+          <Link to="post">Post</Link>
+        </li>
+        <li>
+          <Link to="about">About</Link>
+        </li>
+      </ul>
+    </nav>
+  );
+};
+
+export default Nav;
+
+Home.js
+
+import React from "react";
+import Feed from "./Feed";
+import { useContext } from "react";
+import DataContext from "../context/DataContext";
+
+const Home = () => {
+  const { searchResults, fetchError, isLoading } = useContext(DataContext);
+
+  return (
+    <main className="Home">
+      {isLoading && <p className="statusMsg">Loading Posts...</p>}
+      {!isLoading && fetchError && (
+        <p className="statusMsg">{{ color: "red" }}</p>
+      )}
+      {!isLoading &&
+        !fetchError &&
+        (searchResults.length ? (
+          <Feed posts={searchResults} />
+        ) : (
+          <p className="statusMsg">No Posts To Display</p>
+        ))}
+    </main>
+  );
+};
+
+export default Home;
+
+EditPost.js
+
+import React from "react";
+import { useState, useEffect, useContext } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import api from "../api/posts";
+import DataContext from "../context/DataContext";
+
+const EditPost = () => {
+  const { posts, setPosts } = useContext(DataContext);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const post = posts.find((post) => post.id.toString() === id);
+
+  useEffect(() => {
+    if (post) {
+      setEditTitle(post.title);
+      setEditBody(post.body);
+    }
+  }, [post, setEditTitle, setEditBody]);
+
+  const handleEdit = async (id) => {
+    const datetime = format(new Date(), "MMMM dd, yyyy pp");
+    const updatedPost = { id, title: editTitle, datetime, body: editBody };
+    try {
+      const response = await api.put(`/posts/${id}`, updatedPost);
+      setPosts(
+        posts.map((post) => (post.id === id ? { ...response.data } : post))
+      );
+      setEditTitle("");
+      setEditBody("");
+      navigate("/");
+    } catch (err) {
+      console.log(`Error: ${err.message}`);
+    }
+  };
+
+  return (
+    <main className="NewPost">
+      {editTitle && (
+        <>
+          <h2>Edit Post</h2>
+          <form className="newPostForm" onSubmit={(e) => e.preventDefault()}>
+            <label htmlFor="postTitle">Title:</label>
+            <input
+              id="postTitle"
+              type="text"
+              required
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+            />
+            <label htmlFor="postBody">Post:</label>
+            <textarea
+              id="postBody"
+              required
+              value={editBody}
+              onChange={(e) => setEditBody(e.target.value)}
+            />
+            <button type="submit" onClick={() => handleEdit(post.id)}>
+              Submit
+            </button>
+          </form>
+        </>
+      )}
+      {!editTitle && (
+        <>
+          <h2>Post Not Found</h2>
+          <p>Well, that's disappointing.</p>
+          <p>
+            <Link to="/">Visit Our Homepage</Link>
+          </p>
+        </>
+      )}
+    </main>
+  );
+};
+
+export default EditPost;
+
+-------------------------------------------------------------------------------
+
+Chapter 23: Build And Deploy Your React Apps 
+
+git init 
+
+git add .
+
+gi
