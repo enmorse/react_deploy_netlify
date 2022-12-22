@@ -2,6 +2,13 @@ const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
+  mode: "production",
+  performance: {
+    hints: false,
+    maxEntrypointSize: 512000,
+    maxAssetSize: 512000,
+  },
+  
   entry: "./src/index.js",
   output: {
     path: path.join(__dirname, "/dist"),
