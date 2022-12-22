@@ -736,4 +736,38 @@ git init
 
 git add .
 
-gi
+git commit -m "first commit"
+
+npm i gh-pages -D 
+
+"name": "chapter16",
+"version": "1.0.0",
+"description": "",
+"main": "index.js",
+
+Add...
+
+"homepage": "http://enmorse.github.io/enmorse_react_blog",
+
+... underneath version
+
+"name": "chapter16",
+"version": "1.0.0",
+"homepage": "http://enmorse.github.io/enmorse_react_blog",
+"description": "",
+"main": "index.js",
+
+Add...
+
+"predeploy": "npm run build",
+"deploy": "gh-pages -d build",
+
+... to scripts 
+
+  "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
+    "start": "webpack-dev-server --mode development --open --hot",
+    "build": "webpack --mode production"
+
+npm run deploy
